@@ -5,55 +5,12 @@ import { ArrowDownIcon, ArrowRightIcon, ArrowUpIcon } from "lucide-react"
 
 interface Transaction {
   id: number
-  amount: number
+  amount: string
   date: string
   type: 'income' | 'expense' | 'transfer'
-  account: string
-  description?: string
+  accountId: number
+  accountName: string | null
 }
-
-const mockTransactions: Transaction[] = [
-  {
-    id: 1,
-    amount: 5000,
-    date: "2024-01-15",
-    type: "income",
-    account: "Chase Checking",
-    description: "Salary"
-  },
-  {
-    id: 2,
-    amount: -1200,
-    date: "2024-01-14",
-    type: "expense",
-    account: "Chase Checking",
-    description: "Rent Payment"
-  },
-  {
-    id: 3,
-    amount: -89.50,
-    date: "2024-01-13",
-    type: "expense",
-    account: "Chase Credit Card",
-    description: "Grocery Store"
-  },
-  {
-    id: 4,
-    amount: -500,
-    date: "2024-01-12",
-    type: "transfer",
-    account: "Savings Account",
-    description: "Transfer to Savings"
-  },
-  {
-    id: 5,
-    amount: -45.99,
-    date: "2024-01-11",
-    type: "expense",
-    account: "Chase Checking",
-    description: "Internet Bill"
-  }
-]
 
 interface RecentTransactionsProps {
   transactions?: Transaction[]
@@ -61,7 +18,7 @@ interface RecentTransactionsProps {
 }
 
 export default function RecentTransactions({ 
-  transactions = mockTransactions, 
+  transactions = [], 
   limit = 5 
 }: RecentTransactionsProps) {
   const displayTransactions = transactions.slice(0, limit)
@@ -99,6 +56,22 @@ export default function RecentTransactions({
     }
   }
 
+  // Show empty state if no transactions
+  if (displayTransactions.length === 0) {
+    return (
+      <Card className="col-span-3">
+        <CardHeader>
+          <CardTitle>Recent Transactions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-6 text-muted-foreground">
+            No transactions found. Add some data to see your recent activity.
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card className="col-span-3">
       <CardHeader>
@@ -114,10 +87,10 @@ export default function RecentTransactions({
                 </div>
                 <div className="flex flex-col">
                   <p className="text-sm font-medium leading-none">
-                    {transaction.description || 'Transaction'}
+                    {transaction.type.charAt(0).toUpperCase() + transaction.type.slice(1)}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {transaction.account} • {formatDate(transaction.date)}
+                    {transaction.accountName || 'Unknown Account'} • {formatDate(transaction.date)}
                   </p>
                 </div>
               </div>
@@ -128,7 +101,7 @@ export default function RecentTransactions({
                 <div className={`text-right ${getTransactionColor(transaction.type)}`}>
                   <p className="text-sm font-medium">
                     {transaction.type === 'income' ? '+' : ''}
-                    {formatCurrency(Math.abs(transaction.amount))}
+                    {formatCurrency(Math.abs(Number(transaction.amount)))}
                   </p>
                 </div>
               </div>

@@ -1,18 +1,45 @@
 import NetWorthChart from "@/components/dashboard/net-worth-chart"
 import OverviewCards from "@/components/dashboard/overview-cards"
 import RecentTransactions from "@/components/dashboard/recent-transactions"
+import { getFinancialOverview, getNetWorthTrend, getRecentTransactions } from "@/lib/queries"
 
-// Mock data - in a real app, this would come from your database
-const mockFinancialData = {
-  totalAssets: 230000,
-  totalLiabilities: 55000,
-  netWorth: 175000,
-  monthlyIncome: 8500,
-  monthlyExpenses: 4200,
-  totalCashBalance: 25000,
+// For now, we'll use a hardcoded user ID. In a real app, this would come from authentication
+const USER_ID = 1
+
+async function getDashboardData() {
+  try {
+    const [overview, recentTransactions, netWorthData] = await Promise.all([
+      getFinancialOverview(USER_ID),
+      getRecentTransactions(USER_ID, 5),
+      getNetWorthTrend(USER_ID)
+    ])
+
+    return {
+      overview,
+      recentTransactions,
+      netWorthData
+    }
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error)
+    // Return default values if database is not set up
+    return {
+      overview: {
+        totalAssets: 0,
+        totalLiabilities: 0,
+        netWorth: 0,
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        totalCashBalance: 0,
+      },
+      recentTransactions: [],
+      netWorthData: []
+    }
+  }
 }
 
-export default function Dashboard() {
+export default async function Dashboard() {
+  const { overview, recentTransactions, netWorthData } = await getDashboardData()
+
   return (
     <div className="space-y-6">
       <div>
@@ -22,11 +49,11 @@ export default function Dashboard() {
         </p>
       </div>
       
-      <OverviewCards {...mockFinancialData} />
+      <OverviewCards {...overview} />
       
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
-        <NetWorthChart />
-        <RecentTransactions />
+        <NetWorthChart data={netWorthData} />
+        <RecentTransactions transactions={recentTransactions} />
       </div>
     </div>
   )

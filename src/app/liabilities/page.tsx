@@ -1,6 +1,7 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { getUserLiabilities } from "@/lib/queries"
 import { formatCurrency, formatPercent } from "@/lib/utils"
 import {
 	Calculator,
@@ -13,53 +14,19 @@ import {
 	TrendingDown
 } from "lucide-react"
 
+// For now, we'll use a hardcoded user ID. In a real app, this would come from authentication
+const USER_ID = 1
+
 interface Liability {
   id: number
   name: string
   type: 'mortgage' | 'student_loan' | 'personal_loan'
-  currentBalance: number
-  originalAmount: number
-  interestRate: number
-  monthlyPayment?: number
-  remainingMonths?: number
-  nextPaymentDate?: string
+  currentBalance: string
+  originalAmount: string
+  interestRate: string | null
+  createdAt: Date
+  updatedAt: Date
 }
-
-const mockLiabilities: Liability[] = [
-  {
-    id: 1,
-    name: '123 Main St Mortgage',
-    type: 'mortgage',
-    currentBalance: 285000,
-    originalAmount: 350000,
-    interestRate: 3.25,
-    monthlyPayment: 1847,
-    remainingMonths: 312,
-    nextPaymentDate: '2024-02-01'
-  },
-  {
-    id: 2,
-    name: 'Stanford MBA Student Loan',
-    type: 'student_loan',
-    currentBalance: 45000,
-    originalAmount: 65000,
-    interestRate: 4.5,
-    monthlyPayment: 512,
-    remainingMonths: 96,
-    nextPaymentDate: '2024-02-15'
-  },
-  {
-    id: 3,
-    name: 'Personal Loan - Home Renovation',
-    type: 'personal_loan',
-    currentBalance: 12000,
-    originalAmount: 20000,
-    interestRate: 6.75,
-    monthlyPayment: 395,
-    remainingMonths: 36,
-    nextPaymentDate: '2024-02-10'
-  }
-]
 
 function getLiabilityIcon(type: Liability['type']) {
   switch (type) {
@@ -94,21 +61,77 @@ function getLiabilityTypeColor(type: Liability['type']) {
   }
 }
 
-export default function LiabilitiesPage() {
-  const totalCurrentBalance = mockLiabilities.reduce((sum, liability) => sum + liability.currentBalance, 0)
-  const totalOriginalAmount = mockLiabilities.reduce((sum, liability) => sum + liability.originalAmount, 0)
+async function getLiabilitiesData() {
+  try {
+    const liabilities = await getUserLiabilities(USER_ID)
+    return liabilities
+  } catch (error) {
+    console.error('Error fetching liabilities:', error)
+    return []
+  }
+}
+
+export default async function LiabilitiesPage() {
+  const liabilities = await getLiabilitiesData()
+  
+  const totalCurrentBalance = liabilities.reduce((sum, liability) => sum + Number(liability.currentBalance), 0)
+  const totalOriginalAmount = liabilities.reduce((sum, liability) => sum + Number(liability.originalAmount), 0)
   const totalPaidOff = totalOriginalAmount - totalCurrentBalance
-  const totalMonthlyPayments = mockLiabilities.reduce((sum, liability) => sum + (liability.monthlyPayment || 0), 0)
 
   // Group liabilities by type for summary
-  const liabilitiesByType = mockLiabilities.reduce((acc, liability) => {
+  const liabilitiesByType = liabilities.reduce((acc, liability) => {
     if (!acc[liability.type]) {
       acc[liability.type] = { balance: 0, count: 0 }
     }
-    acc[liability.type].balance += liability.currentBalance
+    acc[liability.type].balance += Number(liability.currentBalance)
     acc[liability.type].count += 1
     return acc
   }, {} as Record<Liability['type'], { balance: number; count: number }>)
+
+  // Calculate weighted average interest rate
+  const weightedInterestRate = liabilities.length > 0 
+    ? liabilities.reduce((sum, l) => {
+        const rate = Number(l.interestRate || 0)
+        const balance = Number(l.currentBalance)
+        return sum + (rate * balance)
+      }, 0) / totalCurrentBalance
+    : 0
+
+  // Show empty state if no liabilities
+  if (liabilities.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Liabilities</h1>
+            <p className="text-muted-foreground">
+              Manage your debts, loans, and payment schedules
+            </p>
+          </div>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Liability
+          </Button>
+        </div>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center py-6">
+              <TrendingDown className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No liabilities found</h3>
+              <p className="text-muted-foreground mb-4">
+                Great news! You don't have any tracked debts or loans yet.
+              </p>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add a Liability
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -148,20 +171,7 @@ export default function LiabilitiesPage() {
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{formatCurrency(totalPaidOff)}</div>
             <p className="text-xs text-muted-foreground">
-              {formatPercent((totalPaidOff / totalOriginalAmount) * 100)} of original debt
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Monthly Payments</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalMonthlyPayments)}</div>
-            <p className="text-xs text-muted-foreground">
-              Total monthly obligation
+              {totalOriginalAmount > 0 ? formatPercent((totalPaidOff / totalOriginalAmount) * 100) : '0%'} of original debt
             </p>
           </CardContent>
         </Card>
@@ -173,40 +183,52 @@ export default function LiabilitiesPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatPercent(
-                mockLiabilities.reduce((sum, l) => sum + (l.interestRate * l.currentBalance), 0) / 
-                totalCurrentBalance
-              )}
+              {formatPercent(weightedInterestRate)}
             </div>
             <p className="text-xs text-muted-foreground">
               Weighted by balance
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Accounts</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{liabilities.length}</div>
+            <p className="text-xs text-muted-foreground">
+              Active liability accounts
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Liability Type Summary */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {Object.entries(liabilitiesByType).map(([type, data]) => (
-          <Card key={type}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{getLiabilityTypeLabel(type as Liability['type'])}</CardTitle>
-              {getLiabilityIcon(type as Liability['type'])}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(data.balance)}</div>
-              <p className="text-xs text-muted-foreground">
-                {data.count} {data.count === 1 ? 'loan' : 'loans'}
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {Object.keys(liabilitiesByType).length > 0 && (
+        <div className="grid gap-4 md:grid-cols-3">
+          {Object.entries(liabilitiesByType).map(([type, data]) => (
+            <Card key={type}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{getLiabilityTypeLabel(type as Liability['type'])}</CardTitle>
+                {getLiabilityIcon(type as Liability['type'])}
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(data.balance)}</div>
+                <p className="text-xs text-muted-foreground">
+                  {data.count} {data.count === 1 ? 'loan' : 'loans'}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Liabilities List */}
       <div className="grid gap-4">
-        {mockLiabilities.map((liability) => {
-          const payoffProgress = ((liability.originalAmount - liability.currentBalance) / liability.originalAmount) * 100
+        {liabilities.map((liability) => {
+          const payoffProgress = ((Number(liability.originalAmount) - Number(liability.currentBalance)) / Number(liability.originalAmount)) * 100
           
           return (
             <Card key={liability.id}>
@@ -227,17 +249,15 @@ export default function LiabilitiesPage() {
                         </Badge>
                       </div>
                       <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <span>Interest Rate: {formatPercent(liability.interestRate)}</span>
-                        {liability.nextPaymentDate && (
-                          <span>Next Payment: {liability.nextPaymentDate}</span>
-                        )}
+                        <span>Interest Rate: {liability.interestRate ? formatPercent(Number(liability.interestRate)) : 'N/A'}</span>
+                        <span>Last updated: {liability.updatedAt.toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-4">
                     <div className="text-right">
                       <div className="text-2xl font-bold text-red-600">
-                        {formatCurrency(liability.currentBalance)}
+                        {formatCurrency(Number(liability.currentBalance))}
                       </div>
                       <p className="text-xs text-muted-foreground">Outstanding balance</p>
                     </div>
@@ -256,39 +276,14 @@ export default function LiabilitiesPage() {
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div 
                       className="bg-green-500 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${payoffProgress}%` }}
+                      style={{ width: `${Math.max(0, Math.min(100, payoffProgress))}%` }}
                     />
                   </div>
                   <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>Paid: {formatCurrency(liability.originalAmount - liability.currentBalance)}</span>
-                    <span>Original: {formatCurrency(liability.originalAmount)}</span>
+                    <span>Paid: {formatCurrency(Number(liability.originalAmount) - Number(liability.currentBalance))}</span>
+                    <span>Original: {formatCurrency(Number(liability.originalAmount))}</span>
                   </div>
                 </div>
-
-                {/* Payment Details */}
-                {liability.monthlyPayment && (
-                  <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Monthly Payment</p>
-                      <p className="font-semibold">{formatCurrency(liability.monthlyPayment)}</p>
-                    </div>
-                    {liability.remainingMonths && (
-                      <>
-                        <div>
-                          <p className="text-muted-foreground">Remaining Months</p>
-                          <p className="font-semibold">{liability.remainingMonths} months</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Payoff Date</p>
-                          <p className="font-semibold">
-                            {new Date(Date.now() + liability.remainingMonths * 30 * 24 * 60 * 60 * 1000)
-                              .toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}
-                          </p>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
               </CardContent>
             </Card>
           )
