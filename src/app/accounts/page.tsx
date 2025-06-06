@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { accountTypeEnum } from "@/db/schema";
-import { getUserAccounts } from "@/lib/queries";
+import { getUserAccounts } from "@/lib/queries/account";
 import { formatCurrency } from "@/lib/utils";
 import {
   CreditCard,

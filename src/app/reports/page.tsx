@@ -3,30 +3,32 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { getFinancialOverview, getNetWorthTrend, getUserAssets, getUserTransactions } from "@/lib/queries"
+import { getUserAssets } from "@/lib/queries/asset"
+import { getFinancialOverview, getNetWorthTrend } from "@/lib/queries/overview"
+import { getUserTransactions } from "@/lib/queries/transaction"
 import { formatCurrency } from "@/lib/utils"
 import {
-    BarChart3,
-    Calendar,
-    DollarSign,
-    Download,
-    TrendingUp
+  BarChart3,
+  Calendar,
+  DollarSign,
+  Download,
+  TrendingUp
 } from "lucide-react"
 import { useEffect, useState } from 'react'
 import {
-    Bar,
-    BarChart,
-    CartesianGrid,
-    Cell,
-    Legend,
-    Line,
-    LineChart,
-    Pie,
-    PieChart as RechartsPieChart,
-    ResponsiveContainer,
-    Tooltip,
-    XAxis,
-    YAxis
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart as RechartsPieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
 } from 'recharts'
 
 // For now, we'll use a hardcoded user ID. In a real app, this would come from authentication

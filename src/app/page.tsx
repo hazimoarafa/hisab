@@ -1,7 +1,8 @@
 import NetWorthChart from "@/components/dashboard/net-worth-chart"
 import OverviewCards from "@/components/dashboard/overview-cards"
 import RecentTransactions from "@/components/dashboard/recent-transactions"
-import { getFinancialOverview, getNetWorthTrend, getRecentTransactions } from "@/lib/queries"
+import { getFinancialOverview, getNetWorthTrend } from "@/lib/queries/overview"
+import { getRecentTransactions } from "@/lib/queries/transaction"
 
 // For now, we'll use a hardcoded user ID. In a real app, this would come from authentication
 const USER_ID = 1

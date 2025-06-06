@@ -10,7 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { deleteAccount } from "@/lib/queries"
+import { deleteAccount } from "@/lib/queries/account"
 import { AlertTriangle } from "lucide-react"
 import { useState } from "react"
 

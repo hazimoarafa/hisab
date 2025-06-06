@@ -1,17 +1,17 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getUserLiabilities } from "@/lib/queries"
+import { getUserLiabilities } from "@/lib/queries/liability"
 import { formatCurrency, formatPercent } from "@/lib/utils"
 import {
-	Calculator,
-	Calendar,
-	CreditCard,
-	GraduationCap,
-	Home,
-	MoreVertical,
-	Plus,
-	TrendingDown
+  Calculator,
+  Calendar,
+  CreditCard,
+  GraduationCap,
+  Home,
+  MoreVertical,
+  Plus,
+  TrendingDown
 } from "lucide-react"
 
 // For now, we'll use a hardcoded user ID. In a real app, this would come from authentication

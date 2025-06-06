@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { getUserTransactions } from "@/lib/queries"
+import { getUserTransactions } from "@/lib/queries/transaction"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import {
 	ArrowDownIcon,
