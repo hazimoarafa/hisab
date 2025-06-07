@@ -18,25 +18,25 @@ export default function Header() {
         
         <nav className="flex items-center space-x-6 text-sm font-medium">
           <Link
-            href="/"
+            href="/dashboard"
             className="transition-colors hover:text-foreground/80 text-foreground/60"
           >
             Dashboard
           </Link>
           <Link
-            href="/accounts"
+            href="/dashboard/accounts"
             className="transition-colors hover:text-foreground/80 text-foreground/60"
           >
             Accounts
           </Link>
           <Link
-            href="/transactions"
+            href="/dashboard/transactions"
             className="transition-colors hover:text-foreground/80 text-foreground/60"
           >
             Transactions
           </Link>
           <Link
-            href="/reports"
+            href="/dashboard/reports"
             className="transition-colors hover:text-foreground/80 text-foreground/60"
           >
             Reports

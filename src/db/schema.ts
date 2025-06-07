@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { check, decimal, integer, pgEnum, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { check, date, decimal, integer, pgEnum, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -31,6 +31,7 @@ export const transactions = pgTable("transactions", {
   fromAccountId: integer().references(() => accounts.id),
   toAccountId: integer().references(() => accounts.id),
   amount: decimal().notNull(),
+  date: date().defaultNow().notNull(),
 }, (table) => [
   check("positive_amount", sql`${table.amount} > 0`),
   check("at_least_one_account", sql`${table.fromAccountId} IS NOT NULL OR ${table.toAccountId} IS NOT NULL`),
