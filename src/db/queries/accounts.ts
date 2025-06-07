@@ -1,7 +1,7 @@
 "use server";
-import { eq, or, sql } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { db } from "..";
-import { accounts, transactions } from "../schema";
+import { accounts } from "../schema";
 
 export async function getAccounts(userId: number) {
   return await db
@@ -11,23 +11,20 @@ export async function getAccounts(userId: number) {
       name: accounts.name,
       type: accounts.type,
       balance: sql<number>`
-        COALESCE(SUM(
-          CASE 
-            WHEN ${transactions.toAccountId} = ${accounts.id} THEN ${transactions.amount}
-            WHEN ${transactions.fromAccountId} = ${accounts.id} THEN -${transactions.amount}
-            ELSE 0
-          END
+        COALESCE((
+          SELECT SUM(
+            CASE 
+              WHEN t."toAccountId" = "accounts"."id" THEN t."amount"
+              WHEN t."fromAccountId" = "accounts"."id" THEN -t."amount"
+              ELSE 0
+            END
+          )
+          FROM "transactions" t
+          WHERE t."toAccountId" = "accounts"."id" 
+             OR t."fromAccountId" = "accounts"."id"
         ), 0)
       `.as('balance')
     })
     .from(accounts)
-    .leftJoin(
-      transactions, 
-      or(
-        eq(transactions.toAccountId, accounts.id),
-        eq(transactions.fromAccountId, accounts.id)
-      )
-    )
-    .where(eq(accounts.userId, userId))
-    .groupBy(accounts.id, accounts.userId, accounts.name, accounts.type);
+    .where(eq(accounts.userId, userId));
 }
