@@ -9,58 +9,92 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Account } from "@/db/schema";
+import { getAccountCategory, getAccountTypeDisplayName } from "@/lib/account-utils";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
+  Banknote,
+  Briefcase,
   Building,
+  Car,
   CreditCard,
   DollarSign,
   Edit,
+  FileText,
+  GraduationCap,
+  HandCoins,
+  Home,
+  LandPlot,
   MoreVertical,
   PiggyBank,
+  Receipt,
   TrendingUp,
   Wallet,
 } from "lucide-react";
 import { useState } from "react";
 
-interface Account {
-  id: number;
-  name: string;
-  type: "ASSET" | "LIABILITY";
+interface AccountWithBalance extends Account {
   balance: number;
 }
 
 interface AccountCardProps {
-  account: Account;
+  account: AccountWithBalance;
 }
 
 export function AccountCard({ account }: AccountCardProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
 
-  const getAccountIcon = (accountName: string, accountType: string) => {
-    const name = accountName.toLowerCase();
-    if (
-      name.includes("bank") ||
-      name.includes("checking") ||
-      name.includes("savings")
-    )
-      return <Wallet className="h-5 w-5" />;
-    if (name.includes("credit") || name.includes("loan"))
-      return <CreditCard className="h-5 w-5" />;
-    if (name.includes("investment") || name.includes("stock"))
-      return <TrendingUp className="h-5 w-5" />;
-    if (name.includes("cash") || name.includes("money"))
-      return <DollarSign className="h-5 w-5" />;
-    if (name.includes("property") || name.includes("real estate"))
-      return <Building className="h-5 w-5" />;
-    if (accountType === "ASSET") return <PiggyBank className="h-5 w-5" />;
-    return <CreditCard className="h-5 w-5" />;
+  const getAccountIcon = (accountType: Account["type"]) => {
+    switch (accountType) {
+      // Asset Types
+      case "CHECKING":
+        return <Wallet className="h-5 w-5" />;
+      case "SAVINGS":
+        return <PiggyBank className="h-5 w-5" />;
+      case "MONEY_MARKET":
+        return <Banknote className="h-5 w-5" />;
+      case "CD":
+        return <Receipt className="h-5 w-5" />;
+      case "INVESTMENT":
+        return <TrendingUp className="h-5 w-5" />;
+      case "REAL_ESTATE":
+        return <LandPlot className="h-5 w-5" />;
+      case "VEHICLE":
+        return <Car className="h-5 w-5" />;
+      case "OTHER_ASSET":
+        return <Briefcase className="h-5 w-5" />;
+      
+      // Liability Types
+      case "CREDIT_CARD":
+        return <CreditCard className="h-5 w-5" />;
+      case "MORTGAGE":
+        return <Home className="h-5 w-5" />;
+      case "AUTO_LOAN":
+        return <Car className="h-5 w-5" />;
+      case "LEASE":
+        return <Building className="h-5 w-5" />;
+      case "STUDENT_LOAN":
+        return <GraduationCap className="h-5 w-5" />;
+      case "PERSONAL_LOAN":
+        return <HandCoins className="h-5 w-5" />;
+      case "LINE_OF_CREDIT":
+        return <FileText className="h-5 w-5" />;
+      case "OTHER_LIABILITY":
+        return <DollarSign className="h-5 w-5" />;
+      
+      default:
+        // Fallback icon based on category
+        const category = getAccountCategory(accountType);
+        return category === "ASSET" ? <PiggyBank className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />;
+    }
   };
 
   const handleEditClick = () => {
     setEditModalOpen(true);
   };
 
-  const isAsset = account.type === "ASSET";
+  const accountCategory = getAccountCategory(account.type);
+  const isAsset = accountCategory === "ASSET";
 
   return (
     <>
@@ -68,7 +102,7 @@ export function AccountCard({ account }: AccountCardProps) {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {getAccountIcon(account.name, account.type)}
+              {getAccountIcon(account.type)}
               <span className="truncate">{account.name}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -80,7 +114,7 @@ export function AccountCard({ account }: AccountCardProps) {
                     : "text-destructive border-destructive/20",
                 )}
               >
-                {isAsset ? "Asset" : "Liability"}
+                {getAccountTypeDisplayName(account.type)}
               </Badge>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

@@ -1,4 +1,4 @@
-import { accountType } from "@/db/schema";
+import { accountType, assetAccountType, liabilityAccountType } from "@/db/schema";
 
 // Get display name for account type
 export function getAccountTypeDisplayName(type: typeof accountType.enumValues[number]): string {
@@ -22,4 +22,19 @@ export function getAccountTypeDisplayName(type: typeof accountType.enumValues[nu
   };
   
   return displayNames[type] || type;
+}
+
+// Determine if an account type is an asset
+export function isAssetAccountType(type: typeof accountType.enumValues[number]): boolean {
+  return assetAccountType.enumValues.includes(type as any);
+}
+
+// Determine if an account type is a liability
+export function isLiabilityAccountType(type: typeof accountType.enumValues[number]): boolean {
+  return liabilityAccountType.enumValues.includes(type as any);
+}
+
+// Get the general category for an account type
+export function getAccountCategory(type: typeof accountType.enumValues[number]): "ASSET" | "LIABILITY" {
+  return isAssetAccountType(type) ? "ASSET" : "LIABILITY";
 }

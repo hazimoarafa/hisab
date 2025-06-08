@@ -28,7 +28,7 @@ export async function getAccounts(userId: number) {
     })
     .from(accounts)
     .where(eq(accounts.userId, userId))
-    .orderBy(b => desc(b.balance));
+    .orderBy(desc(sql`balance`));
 }
 
 export async function updateAccount(
@@ -45,7 +45,7 @@ export async function updateAccount(
     .where(eq(accounts.id, accountId))
     .returning();
 
-  revalidatePath("/accounts");
+  revalidatePath("/dashboard/accounts");
   return updatedAccount;
 }
 

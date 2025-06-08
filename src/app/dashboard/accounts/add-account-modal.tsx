@@ -25,15 +25,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { createAccountWithInitialBalance, updateAccount } from "@/db/queries/accounts";
+import { Account, accountType } from "@/db/schema";
+import { getAccountTypeDisplayName, isAssetAccountType } from "@/lib/account-utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
 const formSchema = z.object({
   name: z.string().min(1, "Account name is required").max(255, "Name too long"),
-  type: z.enum(["ASSET", "LIABILITY"], {
+  type: z.enum(accountType.enumValues, {
     required_error: "Please select an account type",
   }),
   initialBalance: z.coerce.number(),
@@ -41,17 +44,15 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
+// TODO: Replace with actual user authentication
 const USER_ID = 1;
 
-interface Account {
-  id: number;
-  name: string;
-  type: "ASSET" | "LIABILITY";
+interface AccountWithBalance extends Account {
   balance: number;
 }
 
 interface AccountModalProps {
-  account?: Account;
+  account?: AccountWithBalance;
   trigger?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -60,6 +61,7 @@ interface AccountModalProps {
 export function AddAccountModal({ account, trigger, open: controlledOpen, onOpenChange }: AccountModalProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   const isEditing = !!account;
 
   // Use controlled open state if provided, otherwise use internal state
@@ -70,7 +72,7 @@ export function AddAccountModal({ account, trigger, open: controlledOpen, onOpen
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      type: "ASSET",
+      type: "CHECKING",
       initialBalance: 0,
     },
   });
@@ -86,7 +88,7 @@ export function AddAccountModal({ account, trigger, open: controlledOpen, onOpen
     } else {
       form.reset({
         name: "",
-        type: "ASSET",
+        type: "CHECKING",
         initialBalance: 0,
       });
     }
@@ -102,6 +104,7 @@ export function AddAccountModal({ account, trigger, open: controlledOpen, onOpen
           data.name,
           data.type
         );
+        console.log("Account updated successfully");
       } else {
         // Create new account with initial balance
         await createAccountWithInitialBalance(
@@ -110,14 +113,19 @@ export function AddAccountModal({ account, trigger, open: controlledOpen, onOpen
           data.type,
           data.initialBalance,
         );
+        console.log("Account created successfully");
       }
 
       setOpen(false);
       if (!isEditing) {
         form.reset();
       }
+      
+      // Refresh the page data
+      router.refresh();
     } catch (error) {
       console.error("Error submitting form:", error);
+      alert(`Failed to ${isEditing ? "update" : "create"} account. Please try again.`);
     } finally {
       setIsLoading(false);
     }
@@ -132,6 +140,10 @@ export function AddAccountModal({ account, trigger, open: controlledOpen, onOpen
 
   // If controlled externally (open prop provided), don't render trigger
   const isControlled = controlledOpen !== undefined;
+
+  // Group account types by category for better UX
+  const assetTypes = accountType.enumValues.filter(type => isAssetAccountType(type));
+  const liabilityTypes = accountType.enumValues.filter(type => !isAssetAccountType(type));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -181,12 +193,18 @@ export function AddAccountModal({ account, trigger, open: controlledOpen, onOpen
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="ASSET">
-                        Asset (Bank Account, Investment, Cash, Property)
-                      </SelectItem>
-                      <SelectItem value="LIABILITY">
-                        Liability (Credit Card, Loan, Mortgage)
-                      </SelectItem>
+                      <div className="px-2 py-1.5 text-sm font-semibold text-green-700">Assets</div>
+                      {assetTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {getAccountTypeDisplayName(type)}
+                        </SelectItem>
+                      ))}
+                      <div className="px-2 py-1.5 text-sm font-semibold text-red-700 mt-2">Liabilities</div>
+                      {liabilityTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {getAccountTypeDisplayName(type)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />
