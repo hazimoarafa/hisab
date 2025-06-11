@@ -1,4 +1,5 @@
-import { Button } from "@/components/ui/button";
+"use client";
+
 import {
 	Card,
 	CardContent,
@@ -22,16 +23,44 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table";
+import { getAccounts } from "@/db/queries/accounts";
 import { getTransactions } from "@/db/queries/transactions";
-import { formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
-import { Plus, Search } from "lucide-react";
+import { Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { AddTransactionModal } from "./add-transaction-modal";
+
+interface Account {
+	id: number;
+	name: string;
+	type: string;
+}
 
 // TODO: Replace with actual user authentication
 const USER_ID = 1;
 
-export default async function TransactionsPage() {
-	const transactions = await getTransactions(USER_ID);
+export default function TransactionsPage() {
+	const [transactions, setTransactions] = useState<Awaited<ReturnType<typeof getTransactions>>>([]);
+	const [accounts, setAccounts] = useState<Awaited<ReturnType<typeof getAccounts>>>([]);
+
+	useEffect(() => {
+		const fetchData = async () => {
+			try {
+				// Fetch transactions
+				const fetchedTransactions = await getTransactions(USER_ID);
+				setTransactions(fetchedTransactions);
+
+				// Fetch accounts using server function
+				const fetchedAccounts = await getAccounts(USER_ID);
+				setAccounts(fetchedAccounts);
+			} catch (error) {
+				console.error("Error fetching data:", error);
+				// TODO: Show error toast
+			}
+		};
+		fetchData();
+	}, []);
 
 	// Get unique account names for the filter
 	const accountNames = Array.from(
@@ -51,10 +80,7 @@ export default async function TransactionsPage() {
 					<h1 className="text-4xl font-bold text-foreground">Transactions</h1>
 					<p className="text-muted-foreground">View and manage your financial transactions</p>
 				</div>
-				<Button className="flex items-center gap-2">
-					<Plus className="h-4 w-4" />
-					Add Transaction
-				</Button>
+				<AddTransactionModal accounts={accounts} />
 			</div>
 
 			{/* Filters Section */}
@@ -128,9 +154,7 @@ export default async function TransactionsPage() {
 										</TableCell>
 										<TableCell>{transaction.fromAccount?.name || "-"}</TableCell>
 										<TableCell>{transaction.toAccount?.name || "-"}</TableCell>
-										<TableCell className={`text-right ${
-											isIncome ? "text-green-600" : "text-red-600"
-										}`}>
+										<TableCell className={cn("text-right", isIncome && "text-green-600", isExpense && "text-red-600", isTransfer && "text-blue-600")}>
 											{formatCurrency(Number(transaction.amount))}
 										</TableCell>
 									</TableRow>

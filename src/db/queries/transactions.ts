@@ -1,74 +1,79 @@
 "use server";
-import { desc, eq, inArray, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 import { db } from "..";
 import { accounts, transactions } from "../schema";
 
-export type TransactionWithAccounts = {
-  id: number;
-  date: Date;
-  amount: string;
-  fromAccount: {
-    id: number;
-    name: string;
-    type: string;
-  } | null;
-  toAccount: {
-    id: number;
-    name: string;
-    type: string;
-  } | null;
-};
 
-export async function getTransactions(userId: number): Promise<TransactionWithAccounts[]> {
-  const result = await db
+export async function getTransactions(userId: number) {
+  return await db
     .select({
       id: transactions.id,
       date: sql<Date>`${transactions.date}::date`,
       amount: transactions.amount,
-      fromAccountId: transactions.fromAccountId,
-      toAccountId: transactions.toAccountId,
+      fromAccount: sql<{ id: string; name: string; type: string; } | null>`
+        CASE 
+          WHEN "fromAccount".id IS NOT NULL THEN 
+            json_build_object(
+              'id', "fromAccount".id,
+              'name', "fromAccount".name,
+              'type', "fromAccount".type
+            )
+          ELSE NULL
+        END
+      `,
+      toAccount: sql<{ id: string; name: string; type: string; } | null>`
+        CASE 
+          WHEN "toAccount".id IS NOT NULL THEN 
+            json_build_object(
+              'id', "toAccount".id,
+              'name', "toAccount".name,
+              'type', "toAccount".type
+            )
+          ELSE NULL
+        END
+      `,
     })
     .from(transactions)
+    .leftJoin(sql`${accounts} as "fromAccount"`, eq(transactions.fromAccountId, sql`"fromAccount".id`))
+    .leftJoin(sql`${accounts} as "toAccount"`, eq(transactions.toAccountId, sql`"toAccount".id`))
     .where(eq(transactions.userId, userId))
     .orderBy(desc(transactions.date));
+}
 
-  // Get all unique account IDs
-  const accountIds = new Set<number>();
-  result.forEach(t => {
-    if (t.fromAccountId) accountIds.add(t.fromAccountId);
-    if (t.toAccountId) accountIds.add(t.toAccountId);
-  });
-
-  // If no accounts to fetch, return early
-  if (accountIds.size === 0) {
-    return result.map(transaction => ({
-      ...transaction,
-      fromAccount: null,
-      toAccount: null,
-    }));
+export async function createTransaction(
+  userId: number,
+  data: {
+    type: "income" | "expense" | "transfer";
+    amount: string;
+    date: string;
+    fromAccount?: string;
+    toAccount?: string;
+  }
+) {
+  // Validate account requirements based on transaction type
+  if (data.type === "expense" && !data.fromAccount) {
+    throw new Error("From account is required for expenses");
+  }
+  if (data.type === "income" && !data.toAccount) {
+    throw new Error("To account is required for income");
+  }
+  if (data.type === "transfer" && (!data.fromAccount || !data.toAccount)) {
+    throw new Error("Both from and to accounts are required for transfers");
   }
 
-  // Fetch all relevant accounts in one query
-  const accountsData = await db
-    .select({
-      id: accounts.id,
-      name: accounts.name,
-      type: accounts.type,
+  // Insert the transaction
+  const [transaction] = await db
+    .insert(transactions)
+    .values({
+      userId,
+      amount: data.amount,
+      date: data.date,
+      fromAccountId: data.fromAccount ? parseInt(data.fromAccount) : null,
+      toAccountId: data.toAccount ? parseInt(data.toAccount) : null,
     })
-    .from(accounts)
-    .where(inArray(accounts.id, Array.from(accountIds)));
+    .returning();
 
-  // Create a map for quick account lookup
-  const accountsMap = new Map(
-    accountsData.map(account => [account.id, account])
-  );
-
-  // Combine the data
-  return result.map(transaction => ({
-    id: transaction.id,
-    date: transaction.date,
-    amount: transaction.amount,
-    fromAccount: transaction.fromAccountId ? accountsMap.get(transaction.fromAccountId) || null : null,
-    toAccount: transaction.toAccountId ? accountsMap.get(transaction.toAccountId) || null : null,
-  }));
+	revalidatePath("/dashboard/transactions");
+  return transaction;
 } 
