@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import { check, date, decimal, integer, pgTable } from 'drizzle-orm/pg-core';
-import { users } from './users';
 import { accounts } from './accounts';
+import { users } from './users';
 
 /**
  * PostgreSQL function for transaction validation

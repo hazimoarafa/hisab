@@ -1,25 +1,7 @@
 "use server";
-import { PropertyValuation } from "@/lib/property-valuation";
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "..";
-import { accounts, assetValuations, realEstateProperties } from "../schema";
-
-export async function savePropertyValuation(
-  accountId: number,
-  valuation: PropertyValuation
-) {
-  const [savedValuation] = await db
-    .insert(assetValuations)
-    .values({
-      accountId,
-      value: valuation.value.toString(),
-      source: valuation.source as any,
-      valuationDate: valuation.date.toISOString().split('T')[0], // Convert to date string
-    })
-    .returning();
-
-  return savedValuation;
-}
+import { assetValuations } from "../schema";
 
 export async function getLatestValuationsByAccount(accountId: number, limit = 10) {
   return await db
@@ -28,19 +10,6 @@ export async function getLatestValuationsByAccount(accountId: number, limit = 10
     .where(eq(assetValuations.accountId, accountId))
     .orderBy(desc(assetValuations.valuationDate))
     .limit(limit);
-}
-
-export async function getAllRealEstateAccountsWithProperties() {
-  return await db
-    .select({
-      accountId: accounts.id,
-      accountName: accounts.name,
-      userId: accounts.userId,
-      property: realEstateProperties,
-    })
-    .from(accounts)
-    .innerJoin(realEstateProperties, eq(accounts.id, realEstateProperties.accountId))
-    .where(eq(accounts.type, "REAL_ESTATE"));
 }
 
 export async function getValuationsForDateRange(
