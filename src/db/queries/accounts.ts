@@ -2,15 +2,21 @@
 import { desc, eq, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { db } from "..";
-import { accounts, NewRealEstateProperty, realEstateProperties, transactions } from "../schema";
+import { Account, accounts, accountTypeCategory, NewRealEstateProperty, realEstateProperties, transactions } from "../schema";
 
-export async function getAccounts(userId: number) {
+export type AccountDetails = Account & {
+  balance: number;
+  category: "ASSET" | "LIABILITY" | null;
+}
+
+export async function getAccounts(userId: number): Promise<AccountDetails[]> {
   return await db
     .select({
       id: accounts.id,
       userId: accounts.userId,
       name: accounts.name,
       type: accounts.type,
+      category: accountTypeCategory.category,
       balance: sql<number>`
         COALESCE((
           SELECT SUM(
@@ -37,6 +43,7 @@ export async function getAccounts(userId: number) {
       `.as("balance"),
     })
     .from(accounts)
+    .leftJoin(accountTypeCategory, eq(accounts.type, accountTypeCategory.type))
     .where(eq(accounts.userId, userId))
     .orderBy(desc(sql`balance`));
 }

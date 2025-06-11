@@ -3,7 +3,6 @@ import { AddAccountModal } from "@/app/dashboard/accounts/add-account-modal";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getAccounts } from "@/db/queries/accounts";
-import { isAssetAccountType, isLiabilityAccountType } from "@/lib/account-utils";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   ArrowDownCircle,
@@ -21,19 +20,15 @@ export default async function AccountsPage() {
   try {
     const accounts = await getAccounts(USER_ID);
     
+    const assetAccounts = accounts.filter(a => a.category === "ASSET");
+    const liabilityAccounts = accounts.filter(a => a.category === "LIABILITY");
+
     // Calculate totals with proper number handling
-    const assets = accounts
-      .filter(a => isAssetAccountType(a.type))
-      .reduce((total, account) => total + Number(account.balance), 0);
-    
-    const liabilities = accounts
-      .filter(a => isLiabilityAccountType(a.type))
-      .reduce((total, account) => total + Number(account.balance), 0);
-    
+    const assets = assetAccounts.reduce((total, account) => total + Number(account.balance), 0);
+    const liabilities = liabilityAccounts.reduce((total, account) => total + Number(account.balance), 0);
     const netWorth = assets - liabilities;
 
-    const assetAccounts = accounts.filter(a => isAssetAccountType(a.type));
-    const liabilityAccounts = accounts.filter(a => isLiabilityAccountType(a.type));
+
 
     return (
       <div className="container mx-auto p-6 space-y-8">

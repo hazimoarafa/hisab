@@ -9,9 +9,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AccountDetails } from "@/db/queries/accounts";
 import { Account } from "@/db/schema";
-import { getAccountCategory, getAccountTypeDisplayName } from "@/lib/account-utils";
-import { cn, formatCurrency } from "@/lib/utils";
+import { cn, formatCurrency, getAccountTypeDisplayName } from "@/lib/utils";
 import {
   Banknote,
   Briefcase,
@@ -33,18 +33,16 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-interface AccountWithBalance extends Account {
-  balance: number;
-}
 
 interface AccountCardProps {
-  account: AccountWithBalance;
+  account: AccountDetails;
 }
 
 export function AccountCard({ account }: AccountCardProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
+  
 
-  const getAccountIcon = (accountType: Account["type"]) => {
+  const getAccountIcon = async (accountType: Account["type"]) => {
     switch (accountType) {
       // Asset Types
       case "CHECKING":
@@ -81,11 +79,6 @@ export function AccountCard({ account }: AccountCardProps) {
         return <FileText className="h-5 w-5" />;
       case "OTHER_LIABILITY":
         return <DollarSign className="h-5 w-5" />;
-      
-      default:
-        // Fallback icon based on category
-        const category = getAccountCategory(accountType);
-        return category === "ASSET" ? <PiggyBank className="h-5 w-5" /> : <CreditCard className="h-5 w-5" />;
     }
   };
 
@@ -93,8 +86,8 @@ export function AccountCard({ account }: AccountCardProps) {
     setEditModalOpen(true);
   };
 
-  const accountCategory = getAccountCategory(account.type);
-  const isAsset = accountCategory === "ASSET";
+
+  const isAsset = account.category === "ASSET";
 
   return (
     <>

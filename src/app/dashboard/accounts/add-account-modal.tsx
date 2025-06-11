@@ -27,7 +27,7 @@ import {
 import { createAccountWithInitialBalance, createPropertyForExistingAccount, createRealEstateAccountWithProperty, getRealEstateProperty, updateAccount, updateRealEstateProperty } from "@/db/queries/accounts";
 import { Account, accountType } from "@/db/schema";
 import { RealEstateProperty } from "@/db/schema/properties";
-import { getAccountTypeDisplayName, isAssetAccountType } from "@/lib/account-utils";
+import { getAccountTypeDisplayName } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -239,9 +239,6 @@ export function AddAccountModal({ account, trigger, open: controlledOpen, onOpen
   // If controlled externally (open prop provided), don't render trigger
   const isControlled = controlledOpen !== undefined;
 
-  // Group account types by category for better UX
-  const assetTypes = accountType.enumValues.filter(type => isAssetAccountType(type));
-  const liabilityTypes = accountType.enumValues.filter(type => !isAssetAccountType(type));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -291,14 +288,7 @@ export function AddAccountModal({ account, trigger, open: controlledOpen, onOpen
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <div className="px-2 py-1.5 text-sm font-semibold text-green-700">Assets</div>
-                      {assetTypes.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {getAccountTypeDisplayName(type)}
-                        </SelectItem>
-                      ))}
-                      <div className="px-2 py-1.5 text-sm font-semibold text-red-700 mt-2">Liabilities</div>
-                      {liabilityTypes.map((type) => (
+                      {accountType.enumValues.map((type) => (
                         <SelectItem key={type} value={type}>
                           {getAccountTypeDisplayName(type)}
                         </SelectItem>

@@ -23,9 +23,8 @@ $$ LANGUAGE plpgsql;
 -- 2. Drop the trigger if it already exists (for idempotency)
 DROP TRIGGER IF EXISTS ensure_all_account_types_mapped ON account_type_category;
 
--- 3. Create the constraint trigger
-CREATE CONSTRAINT TRIGGER ensure_all_account_types_mapped
+-- 3. Create a regular trigger (not a constraint trigger)
+CREATE TRIGGER ensure_all_account_types_mapped
 AFTER INSERT OR UPDATE OR DELETE ON account_type_category
-DEFERRABLE INITIALLY DEFERRED
 FOR EACH STATEMENT
 EXECUTE FUNCTION check_account_type_mapping(); 
