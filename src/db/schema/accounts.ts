@@ -1,20 +1,16 @@
-import { integer, pgTable, varchar } from 'drizzle-orm/pg-core';
+import { integer, pgEnum, pgTable, varchar } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
-import { pgEnum } from 'drizzle-orm/pg-core';
-
-export const assetAccountType = pgEnum("asset_account_type", [
+// Combined enum for all account types
+export const accountType = pgEnum("account_type", [
   "CHECKING",
-  "SAVINGS", 
+  "SAVINGS",
   "MONEY_MARKET",
-  "CD", // Certificate of Deposit
-  "INVESTMENT", // Brokerage, 401k, IRA, etc.
+  "CD",
+  "INVESTMENT",
   "REAL_ESTATE",
   "VEHICLE",
-  "OTHER_ASSET"
-]);
-
-export const liabilityAccountType = pgEnum("liability_account_type", [
+  "OTHER_ASSET",
   "CREDIT_CARD",
   "MORTGAGE",
   "AUTO_LOAN",
@@ -25,11 +21,14 @@ export const liabilityAccountType = pgEnum("liability_account_type", [
   "OTHER_LIABILITY"
 ]);
 
-// Combined enum for storage - this is what you'll actually use in your tables
-export const accountType = pgEnum("account_type", [
-  ...assetAccountType.enumValues,
-  ...liabilityAccountType.enumValues
-]);
+// Enum for account category
+export const accountCategory = pgEnum("account_category", ["ASSET", "LIABILITY"]);
+
+// Mapping table: account_type -> category
+export const accountTypeCategory = pgTable("account_type_category", {
+  type: accountType().primaryKey(),
+  category: accountCategory().notNull(),
+});
 
 export const accounts = pgTable('accounts', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

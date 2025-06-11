@@ -15,12 +15,22 @@ export async function getAccounts(userId: number) {
         COALESCE((
           SELECT SUM(
             CASE 
-              WHEN t."toAccountId" = "accounts"."id" THEN t."amount"
-              WHEN t."fromAccountId" = "accounts"."id" THEN -t."amount"
-              ELSE 0
+              WHEN a.type IN ('CHECKING', 'SAVINGS', 'MONEY_MARKET', 'CD', 'INVESTMENT', 'VEHICLE', 'OTHER_ASSET') THEN
+                CASE 
+                  WHEN t."toAccountId" = "accounts"."id" THEN t."amount"
+                  WHEN t."fromAccountId" = "accounts"."id" THEN -t."amount"
+                  ELSE 0
+                END
+              ELSE -- For liability accounts (CREDIT_CARD, MORTGAGE, etc.)
+                CASE 
+                  WHEN t."toAccountId" = "accounts"."id" THEN -t."amount"
+                  WHEN t."fromAccountId" = "accounts"."id" THEN t."amount"
+                  ELSE 0
+                END
             END
           )
           FROM "transactions" t
+          JOIN "accounts" a ON a.id = "accounts"."id"
           WHERE t."toAccountId" = "accounts"."id" 
              OR t."fromAccountId" = "accounts"."id"
         ), 0)
