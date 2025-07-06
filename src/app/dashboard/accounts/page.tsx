@@ -28,8 +28,6 @@ export default async function AccountsPage() {
     const liabilities = liabilityAccounts.reduce((total, account) => total + Number(account.balance), 0);
     const netWorth = assets - liabilities;
 
-
-
     return (
       <div className="container mx-auto p-6 space-y-8">
         {/* Header Section */}

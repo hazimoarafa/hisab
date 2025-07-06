@@ -27,7 +27,7 @@ import {
 import { createAccountWithInitialBalance, createPropertyForExistingAccount, createRealEstateAccountWithProperty, getRealEstateProperty, updateAccount, updateRealEstateProperty } from "@/db/queries/accounts";
 import { Account, accountType } from "@/db/schema";
 import { RealEstateProperty } from "@/db/schema/properties";
-import { getAccountTypeDisplayName } from "@/lib/utils";
+import { accountTypeDisplayNames } from "@/lib/consts";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -290,7 +290,7 @@ export function AddAccountModal({ account, trigger, open: controlledOpen, onOpen
                     <SelectContent>
                       {accountType.enumValues.map((type) => (
                         <SelectItem key={type} value={type}>
-                          {getAccountTypeDisplayName(type)}
+                          {accountTypeDisplayNames[type]}
                         </SelectItem>
                       ))}
                     </SelectContent>

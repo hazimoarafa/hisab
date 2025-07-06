@@ -21,7 +21,7 @@ export async function getAccounts(userId: number): Promise<AccountDetails[]> {
         COALESCE((
           SELECT SUM(
             CASE 
-              WHEN a.type IN ('CHECKING', 'SAVINGS', 'MONEY_MARKET', 'CD', 'INVESTMENT', 'VEHICLE', 'OTHER_ASSET') THEN
+              WHEN a.type IN (SELECT type FROM "account_type_category" WHERE category = 'ASSET') THEN
                 CASE 
                   WHEN t."toAccountId" = "accounts"."id" THEN t."amount"
                   WHEN t."fromAccountId" = "accounts"."id" THEN -t."amount"
@@ -86,12 +86,27 @@ export async function createAccountWithInitialBalance(
 
     // If there's an initial balance, create an initial transaction
     if (initialBalance !== 0) {
+      // Get the category for the account type
+      const [typeCategory] = await tx
+        .select({ category: accountTypeCategory.category })
+        .from(accountTypeCategory)
+        .where(eq(accountTypeCategory.type, type));
+      const category = typeCategory?.category;
+
+      let toAccountId = null;
+      let fromAccountId = null;
+      if (category === "ASSET") {
+        toAccountId = initialBalance > 0 ? newAccount.id : null;
+        fromAccountId = initialBalance < 0 ? newAccount.id : null;
+      } else if (category === "LIABILITY") {
+        toAccountId = initialBalance < 0 ? newAccount.id : null;
+        fromAccountId = initialBalance > 0 ? newAccount.id : null;
+      }
+
       await tx.insert(transactions).values({
         userId,
-        // For assets, money comes "to" the account (positive balance)
-        // For liabilities, money goes "from" the account (represents debt owed)
-        toAccountId: initialBalance > 0 ? newAccount.id : null,
-        fromAccountId: initialBalance < 0 ? newAccount.id : null,
+        toAccountId,
+        fromAccountId,
         amount: Math.abs(initialBalance).toString(),
       });
     }

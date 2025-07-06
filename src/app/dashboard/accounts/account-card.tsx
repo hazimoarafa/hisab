@@ -10,27 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AccountDetails } from "@/db/queries/accounts";
-import { Account } from "@/db/schema";
-import { cn, formatCurrency, getAccountTypeDisplayName } from "@/lib/utils";
-import {
-  Banknote,
-  Briefcase,
-  Building,
-  Car,
-  CreditCard,
-  DollarSign,
-  Edit,
-  FileText,
-  GraduationCap,
-  HandCoins,
-  Home,
-  LandPlot,
-  MoreVertical,
-  PiggyBank,
-  Receipt,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { accountIcons, accountTypeDisplayNames } from "@/lib/consts";
+import { cn, formatCurrency } from "@/lib/utils";
+import { Edit, MoreVertical } from "lucide-react";
 import { useState } from "react";
 
 
@@ -40,52 +22,10 @@ interface AccountCardProps {
 
 export function AccountCard({ account }: AccountCardProps) {
   const [editModalOpen, setEditModalOpen] = useState(false);
-  
-
-  const getAccountIcon = async (accountType: Account["type"]) => {
-    switch (accountType) {
-      // Asset Types
-      case "CHECKING":
-        return <Wallet className="h-5 w-5" />;
-      case "SAVINGS":
-        return <PiggyBank className="h-5 w-5" />;
-      case "MONEY_MARKET":
-        return <Banknote className="h-5 w-5" />;
-      case "CD":
-        return <Receipt className="h-5 w-5" />;
-      case "INVESTMENT":
-        return <TrendingUp className="h-5 w-5" />;
-      case "REAL_ESTATE":
-        return <LandPlot className="h-5 w-5" />;
-      case "VEHICLE":
-        return <Car className="h-5 w-5" />;
-      case "OTHER_ASSET":
-        return <Briefcase className="h-5 w-5" />;
-      
-      // Liability Types
-      case "CREDIT_CARD":
-        return <CreditCard className="h-5 w-5" />;
-      case "MORTGAGE":
-        return <Home className="h-5 w-5" />;
-      case "AUTO_LOAN":
-        return <Car className="h-5 w-5" />;
-      case "LEASE":
-        return <Building className="h-5 w-5" />;
-      case "STUDENT_LOAN":
-        return <GraduationCap className="h-5 w-5" />;
-      case "PERSONAL_LOAN":
-        return <HandCoins className="h-5 w-5" />;
-      case "LINE_OF_CREDIT":
-        return <FileText className="h-5 w-5" />;
-      case "OTHER_LIABILITY":
-        return <DollarSign className="h-5 w-5" />;
-    }
-  };
 
   const handleEditClick = () => {
     setEditModalOpen(true);
   };
-
 
   const isAsset = account.category === "ASSET";
 
@@ -95,7 +35,7 @@ export function AccountCard({ account }: AccountCardProps) {
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              {getAccountIcon(account.type)}
+              {accountIcons[account.type]}
               <span className="truncate">{account.name}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -107,7 +47,7 @@ export function AccountCard({ account }: AccountCardProps) {
                     : "text-destructive border-destructive/20",
                 )}
               >
-                {getAccountTypeDisplayName(account.type)}
+                {accountTypeDisplayNames[account.type]}
               </Badge>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
