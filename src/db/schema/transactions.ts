@@ -37,10 +37,10 @@ export const transactions = pgTable("transactions", {
 }, (table) => [
   check("positive_amount", sql`${table.amount} > 0`),
   check("at_least_one_account", sql`${table.fromAccountId} IS NOT NULL OR ${table.toAccountId} IS NOT NULL`),
-  check("no_real_estate_accounts", sql`
-    is_account_transactable(${table.fromAccountId}) AND
-    is_account_transactable(${table.toAccountId})
-  `),
+  // check("no_real_estate_accounts", sql`
+  //   is_account_transactable(${table.fromAccountId}) AND
+  //   is_account_transactable(${table.toAccountId})
+  // `),
 ]);
 
 export type Transaction = typeof transactions.$inferSelect;

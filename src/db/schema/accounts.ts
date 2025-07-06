@@ -3,21 +3,18 @@ import { users } from './users';
 
 // Combined enum for all account types
 export const accountType = pgEnum("account_type", [
+  // Asset
   "CHECKING",
   "SAVINGS",
-  "MONEY_MARKET",
-  "CD",
-  "INVESTMENT",
+  "CRYPTO",
   "REAL_ESTATE",
   "VEHICLE",
   "OTHER_ASSET",
+  // Liability
   "CREDIT_CARD",
   "MORTGAGE",
   "AUTO_LOAN",
   "LEASE",
-  "STUDENT_LOAN",
-  "PERSONAL_LOAN",
-  "LINE_OF_CREDIT",
   "OTHER_LIABILITY"
 ]);
 
